@@ -1,8 +1,7 @@
-﻿Set-StrictMode -Version 2.0
-param (
+﻿param (
   [String] $TestCase = 'c:\vagrant\test.pats'
 )
-
+Set-StrictMode -Version 2.0
 $testNameKey = "testName"
 $testPSKey   = "testPS"
 
@@ -31,51 +30,37 @@ function ParseTestcase() {
     return $tests
 }
     
-  #  if ($matches.success) {
-  #      write-host "its seuccess"
-  #      $i = 1
-#
- #       foreach ($match in [regex]::Matches($raw, $testRe, $i)) {
- #           write-host "lOL"
-#
- #           write-host $matches.captures.groups[1]
-  #          $i += 1
-  #      }
-   # }
-
-
-   #write-host $matches.captures.groups.Count
-
-
-#    foreach ($line in $raw) {
-#        ($url.ToCharArray() | Where-Object {$_ -eq ''} | Measure-Object).Count
-
-
-#        if ($insideTest -and $insidePS) {
-#            # scan for the `}` indicating end of and powershell
-#            if ($line -match $endTestRe
-#        if ($line -match $testNameRe) {
-#            $insideTest = $true
-#            
-#            $testName = [regex]::Match($line, $testNameRe).captures.groups[1]
-#            $tests[$testName] = ""
-#        } else {
-#            # append to current testcase
-#            $tests[$testName] += $line
-#        }
-#    }
-
-
-  #  write-host "parsed tests OK"
-  #  foreach ($test in $tests.Keys) {
-  #      Write-Host "${test}: $($tests.Item($test))"
-  #  }
 
 function RunTest() {
     param([string] $PS)
+    
+    # temporary files can only be created as .tmp, we must move it to end .ps1 or powershell refuse to run it
+    $tmp = New-TemporaryFile
+    $tmp.MoveTo("$($tmp.FullName).ps1")
 
+    $PS | Out-File -filepath $tmp.FullName 
+    try {
+        # https://stackoverflow.com/a/8762068/3441106 
+        $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+        $pinfo.FileName = "powershell.exe"
+        $pinfo.RedirectStandardError = $true
+        $pinfo.RedirectStandardOutput = $true
+        $pinfo.UseShellExecute = $false
+        $pinfo.Arguments = "-File $($tmp.FullName)"
+        $p = New-Object System.Diagnostics.Process
+        $p.StartInfo = $pinfo
+        $p.Start() | Out-Null
+        $p.WaitForExit()
+        $stdout = $p.StandardOutput.ReadToEnd()
+        $stderr = $p.StandardError.ReadToEnd()
 
-    return 0
+        
+        #write-host $stdout
+        #write-host $stderr
+    } finally {
+        Remove-Item $tmp.FullName -Force
+    }
+    return $p.ExitCode
 }
 
 
@@ -89,15 +74,18 @@ function RunTests() {
         $status = RunTest $test[$testPSKey]
         if ($status -eq 0) {
             $emoji = "✓"
+            write-host " $($emoji) $($test[$testNameKey])"
         } else {
             $emoji = "✗"
             $failedTests += 1
+            write-error " $($emoji) $($test[$testNameKey])"
         }
         
-        write-host " $($emoji) $($test[$testNameKey])"
+        
     }
 
     write-host "$($tests.Count) test, $($failedTests) failure"
+    return $failedTests
 }
 
 
@@ -108,8 +96,11 @@ if ($TestCase -eq "") {
     if (Test-Path $TestCase) {
         write-host "processing tests in $($TestCase)"
         $tests = ParseTestcase $TestCase
-        RunTests $tests
+        $status = RunTests $tests
+        exit $status
+
     } else {
         Write-Error "Missing testcase file: $($TestCase)"
+        exit 1
     }
 }
