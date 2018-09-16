@@ -1,0 +1,1 @@
+﻿get-childitem dirs -Directory | ForEach-Object {New-Item -Path c:\windows\temp\$_.Name -ItemType SymbolicLink -Value $_.FullName}

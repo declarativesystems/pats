@@ -1,0 +1,29 @@
+﻿@test "list files on C: drive" {
+  dir c:\
+}
+
+@test "do something cool" {
+  dir c:\temp
+}
+
+@test "run some powershell" {
+    Get-CimInstance -ClassName win32_operatingsystem | select csname, lastbootuptime
+}
+
+@test "run some curly powershell" {
+    if ($true) { write-host "true is true" } else { write-host "true is not true1" }
+}
+
+
+@test "run some more curly powershell" {
+    if ($true) { write-host "true is true" } else { write-host "true is not true2" }
+}
+
+
+@test "run some more more more curly powershell" {
+    if ($true) { write-host "true is true" } else { write-host "true is not true3" }
+}
+
+@test "a failing test" {
+    surely this can't work
+}
