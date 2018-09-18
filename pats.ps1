@@ -1,5 +1,5 @@
-﻿param (
-  [String] $TestCase = 'c:\vagrant\test.pats'
+param (
+  [String] $TestCase = 'test.pats'
 )
 Set-StrictMode -Version 2.0
 $testNameKey = "testName"
@@ -38,7 +38,9 @@ function RunTest() {
     $tmp = New-TemporaryFile
     $tmp.MoveTo("$($tmp.FullName).ps1")
 
-    $PS | Out-File -filepath $tmp.FullName 
+    # exit with the status of the subcommand, not the powershell command itself
+    "$($PS) ; exit `$lastExitCode" | Out-File -filepath $tmp.FullName
+    $exitCode = 255
     try {
         # https://stackoverflow.com/a/8762068/3441106 
         $pinfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -53,14 +55,15 @@ function RunTest() {
         $p.WaitForExit()
         $stdout = $p.StandardOutput.ReadToEnd()
         $stderr = $p.StandardError.ReadToEnd()
-
+        $exitCode = $p.ExitCode
         
         #write-host $stdout
         #write-host $stderr
+        #write-host "test done: status $($exitCode)"
     } finally {
         Remove-Item $tmp.FullName -Force
     }
-    return $p.ExitCode
+    return $exitCode
 }
 
 
@@ -73,10 +76,10 @@ function RunTests() {
     foreach ($test in $Tests) {
         $status = RunTest $test[$testPSKey]
         if ($status -eq 0) {
-            $emoji = "✓"
+            $emoji = "√"
             write-host " $($emoji) $($test[$testNameKey])"
         } else {
-            $emoji = "✗"
+            $emoji = "X"
             $failedTests += 1
             write-error " $($emoji) $($test[$testNameKey])"
         }
