@@ -76,7 +76,7 @@ function RunTests() {
     foreach ($test in $Tests) {
         $status = RunTest $test[$testPSKey]
         if ($status -eq 0) {
-            $emoji = "√"
+            $emoji = "*"
             write-host " $($emoji) $($test[$testNameKey])"
         } else {
             $emoji = "X"
