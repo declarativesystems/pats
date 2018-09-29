@@ -13,6 +13,17 @@ Basically the same as BATS but with powershell. Here's an example:
 }
 ```
 
+## Test results?
+
+* `[*]` - Test passed
+* `[X]` - Test failed
+
+No emojii or even most extended ASCII characters allowed in our terminal 😂
+
+Overall test status communicated by exit code:
+* 0 - All tests passed
+* Otherwise error
+
 ## Support?
 If your interested in sponsoring development please email sales@declarativesystems.com to start the conversation.
 
